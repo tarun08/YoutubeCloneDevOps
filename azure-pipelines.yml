@@ -5,7 +5,7 @@ trigger:
       - main  # Trigger pipeline on pushes to main branch
 
 pool:
-  -name: 'default'
+  name: 'Default'
 
 variables:
   buildConfiguration: 'Release'
