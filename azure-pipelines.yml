@@ -5,30 +5,50 @@ trigger:
       - main  # Trigger pipeline on pushes to main branch
 
 pool:
-  name: 'Default'
+  vmImage: 'ubuntu-latest'
 
 variables:
   buildConfiguration: 'Release'
-  nodeVersion: '22.x'
+  nodeVersion: '18.x'  # Use Node 18, compatible with react-scripts
 
 steps:
 # Install Node.js
-- task: UseNode@1
+- task: NodeTool@0
   inputs:
+    versionSpec: '$(nodeVersion)'
     checkLatest: true
-  displayName: 'Install Node.js'
+  displayName: 'Install Node.js 18.x'
 
-# Install dependencies
+# Restore npm cache (optional, speeds up CI)
+- task: Cache@2
+  inputs:
+    key: 'npm | "$(Agent.OS)" | package-lock.json'
+    path: $(NPM_CONFIG_CACHE)
+    cacheHitVar: CACHE_RESTORED
+  displayName: 'Restore npm cache'
+
+# Clean workspace (optional, prevent old node_modules issues)
 - script: |
-    npm install
+    rm -rf node_modules package-lock.json
+  displayName: 'Clean workspace before install'
+
+# Install dependencies using npm ci (safer for CI)
+- script: |
+    npm ci
   displayName: 'Install npm packages'
 
-# Build the React app
+# Run tests (optional)
 - script: |
-    npm run build
-  displayName: 'Build React app'
+    npm test -- --watchAll=false
+  displayName: 'Run tests'
 
-# Copy build to artifact staging
+# Build the React app with increased memory (for large apps)
+- script: |
+    export NODE_OPTIONS=--max-old-space-size=4096
+    npm run build
+  displayName: 'Build React app with increased memory'
+
+# Copy build to artifact staging directory
 - script: |
     mkdir -p $(Build.ArtifactStagingDirectory)
     cp -r build/* $(Build.ArtifactStagingDirectory)/
