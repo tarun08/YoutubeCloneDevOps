@@ -1,8 +1,57 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
+# azure-pipelines.yml
 trigger:
-- master
+  branches:
+    include:
+      - main  # Trigger pipeline on pushes to main branch
 
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  nodeVersion: '18.x'
+
+steps:
+# Install Node.js
+- task: NodeTool@0
+  inputs:
+    versionSource: 'spec'
+    versionSpec: '$(nodeVersion)'
+  displayName: 'Install Node.js'
+
+# Install dependencies
+- script: |
+    npm install
+  displayName: 'Install npm packages'
+
+# Run tests
+- script: |
+    npm test -- --watchAll=false
+  displayName: 'Run tests'
+
+# Build the React app
+- script: |
+    npm run build
+  displayName: 'Build React app'
+
+# Publish build artifacts
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'build'
+    ArtifactName: 'react-app-build'
+    publishLocation: 'Container'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/build'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+
+- task: AzureRmWebAppDeployment@5
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Tarun Subscription(783dc097-8c71-4893-89b3-2e62720fd922)'
+    appType: 'webAppLinux'
+    WebAppName: 'youtube-clone-web-app'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/build'
+    RuntimeStack: 'NODE|18-lts'
+    DeploymentTypeLinux: 'oneDeploy'
