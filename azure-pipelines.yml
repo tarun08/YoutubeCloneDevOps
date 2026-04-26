@@ -9,7 +9,7 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  nodeVersion: '18.x'
+  nodeVersion: '22.x'
 
 steps:
 # Install Node.js
@@ -17,14 +17,6 @@ steps:
   inputs:
     checkLatest: true
   displayName: 'Install Node.js'
-
-# Restore npm cache (optional but saves time)
-- task: Cache@2
-  inputs:
-    key: 'npm | "$(Agent.OS)" | package-lock.json'
-    path: $(NPM_CONFIG_CACHE)
-    cacheHitVar: CACHE_RESTORED
-  displayName: 'Restore npm cache'
 
 # Install dependencies
 - script: |
