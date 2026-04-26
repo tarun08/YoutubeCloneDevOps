@@ -5,7 +5,7 @@ trigger:
       - main  # Trigger pipeline on pushes to main branch
 
 pool:
-  vmImage: 'ubuntu-latest'
+  -name: 'DevopOpsPipelingAgentPool'
 
 variables:
   buildConfiguration: 'Release'
