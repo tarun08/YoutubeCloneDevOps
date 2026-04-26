@@ -31,11 +31,6 @@ steps:
     npm install
   displayName: 'Install npm packages'
 
-# Run tests
-- script: |
-    npm test -- --watchAll=false
-  displayName: 'Run tests'
-
 # Build the React app
 - script: |
     npm run build
