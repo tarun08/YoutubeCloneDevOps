@@ -15,9 +15,17 @@ steps:
 # Install Node.js
 - task: NodeTool@0
   inputs:
-    versionSource: 'spec'
     versionSpec: '$(nodeVersion)'
+    checkLatest: true
   displayName: 'Install Node.js'
+
+# Restore npm cache (optional but saves time)
+- task: Cache@2
+  inputs:
+    key: 'npm | "$(Agent.OS)" | package-lock.json'
+    path: $(NPM_CONFIG_CACHE)
+    cacheHitVar: CACHE_RESTORED
+  displayName: 'Restore npm cache'
 
 # Install dependencies
 - script: |
@@ -34,24 +42,31 @@ steps:
     npm run build
   displayName: 'Build React app'
 
-# Publish build artifacts
+# Copy build to artifact staging
+- script: |
+    mkdir -p $(Build.ArtifactStagingDirectory)
+    cp -r build/* $(Build.ArtifactStagingDirectory)/
+  displayName: 'Copy build to staging directory'
+
+# Clean node_modules to save disk space
+- script: |
+    rm -rf node_modules
+  displayName: 'Clean node_modules to save disk'
+
+# Publish build artifact
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: 'build'
-    ArtifactName: 'react-app-build'
-    publishLocation: 'Container'
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/build'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
+# Deploy to Azure Web App (Linux)
 - task: AzureRmWebAppDeployment@5
   inputs:
     ConnectionType: 'AzureRM'
     azureSubscription: 'Tarun Subscription(783dc097-8c71-4893-89b3-2e62720fd922)'
     appType: 'webAppLinux'
     WebAppName: 'youtube-clone-web-app'
-    packageForLinux: '$(System.DefaultWorkingDirectory)/build'
+    packageForLinux: '$(Build.ArtifactStagingDirectory)'
     RuntimeStack: 'NODE|18-lts'
     DeploymentTypeLinux: 'oneDeploy'
