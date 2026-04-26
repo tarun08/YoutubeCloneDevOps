@@ -13,9 +13,8 @@ variables:
 
 steps:
 # Install Node.js
-- task: NodeTool@0
+- task: UseNode@1
   inputs:
-    versionSpec: '$(nodeVersion)'
     checkLatest: true
   displayName: 'Install Node.js'
 
